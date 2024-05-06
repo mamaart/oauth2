@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/mamaart/jwtengine"
 	"github.com/mamaart/oauth2/internal/clienterrors"
-	"github.com/mamaart/oauth2/internal/models"
 )
 
-func writeTokens(w http.ResponseWriter, tokens *models.Tokens) {
+func writeTokens(w http.ResponseWriter, tokens *jwtengine.Tokens) {
 	returnData := struct {
 		AccessToken  string `json:"access_token"`
 		RefreshToken string `json:"refresh_token"`

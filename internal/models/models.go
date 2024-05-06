@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"net/url"
 	"strings"
-
-	"github.com/mamaart/jwtengine/models"
 )
 
 type Client struct {
@@ -42,5 +40,3 @@ func (o OAuthParams) URL(code string) string {
 	buf.WriteString(url.Values{"code": {code}, "state": {o.State}}.Encode())
 	return buf.String()
 }
-
-type Tokens = models.Tokens

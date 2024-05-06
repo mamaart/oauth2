@@ -3,9 +3,9 @@ package token
 import (
 	"net/http"
 
+	"github.com/mamaart/jwtengine"
 	"github.com/mamaart/oauth2/internal/claims"
 	"github.com/mamaart/oauth2/internal/clienterrors"
-	"github.com/mamaart/oauth2/internal/models"
 	"golang.org/x/oauth2"
 )
 
@@ -21,7 +21,7 @@ func (err *AuthGrantError) Error() string {
 
 func (s *s) authGrantFlow(
 	clientID, clientSecret, code, codeVerifier string,
-) (*models.Tokens, error) {
+) (*jwtengine.Tokens, error) {
 	client, err := s.clientDB.Client(clientID)
 	if err != nil {
 		return nil, &AuthGrantError{
