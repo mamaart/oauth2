@@ -23,7 +23,7 @@ import (
 //   - validate code challenge
 //   - generate authorization code
 //   - redirect to client_redirect_uri
-func (o *OAuth) Authorize(w http.ResponseWriter, r *http.Request) {
+func (o *OAuth) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	session, err := o.cookieManager.Session(r, w)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -9,6 +9,7 @@ import (
 	"github.com/mamaart/oauth2/internal/authorizer"
 	"github.com/mamaart/oauth2/internal/cookiemanager"
 	"github.com/mamaart/oauth2/internal/oauth"
+	"github.com/mamaart/oauth2/internal/oauth/token"
 	"github.com/mamaart/oauth2/internal/ports"
 	"github.com/mamaart/oauth2/pkg/uuid"
 )
@@ -46,14 +47,13 @@ func New(opts Opts) (*OAuthServer, error) {
 	var (
 		cm       = cookiemanager.New("cookieman")
 		mux      = http.NewServeMux()
-		oauth    = oauth.New(opts.ClientDB, cm)
 		userAuth = authorizer.New(cm, opts.UserAuthorizer)
 	)
 
 	mux.Handle("/static/", http.StripPrefix("/static", http.FileServer(http.Dir("./static/"))))
 
-	mux.HandleFunc("GET /authorize", oauth.Authorize)
-	mux.HandleFunc("POST /token", oauth.Token)
+	mux.Handle("GET /authorize", oauth.New(opts.ClientDB, cm))
+	mux.Handle("POST /token", token.New(opts.ClientDB))
 
 	mux.HandleFunc("GET /auth", userAuth.UI)
 	mux.HandleFunc("POST /auth", userAuth.Login)
