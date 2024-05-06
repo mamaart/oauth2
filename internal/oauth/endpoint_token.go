@@ -15,6 +15,7 @@ import (
 func (o *OAuth) Token(w http.ResponseWriter, r *http.Request) {
 	grantType := r.FormValue("grant_type")
 	if grantType != "authorization_code" {
+		// TODO: implement refresh_token grantType
 		w.WriteHeader(http.StatusBadRequest)
 		clienterrors.Write(
 			w,
@@ -26,7 +27,6 @@ func (o *OAuth) Token(w http.ResponseWriter, r *http.Request) {
 	clientID := r.FormValue("client_id")
 	client, err := o.clientDB.Client(clientID)
 	if err != nil {
-		// http.Error(w, err.Error(), http.StatusUnauthorized)
 		w.WriteHeader(http.StatusUnauthorized)
 		clienterrors.Write(w, clienterrors.ErrInvalidClient, err.Error())
 		return
@@ -34,7 +34,6 @@ func (o *OAuth) Token(w http.ResponseWriter, r *http.Request) {
 
 	clientSecret := r.FormValue("client_secret")
 	if clientSecret != client.Secret {
-		// http.Error(w, "oauth client not authorized", http.StatusUnauthorized)
 		w.WriteHeader(http.StatusBadRequest)
 		clienterrors.Write(w, clienterrors.ErrUnauthorizedClient, "")
 		return
@@ -44,13 +43,11 @@ func (o *OAuth) Token(w http.ResponseWriter, r *http.Request) {
 	if code == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		clienterrors.Write(w, clienterrors.ErrInvalidGrant, "missing authcode")
-		// http.Error(w, "no authorization code provided", http.StatusNotAcceptable)
 		return
 	}
 
 	codeVerifier := r.FormValue("code_verifier")
 	if codeVerifier == "" {
-		// http.Error(w, "no code verifier provided", http.StatusNotAcceptable)
 		w.WriteHeader(http.StatusBadRequest)
 		clienterrors.Write(w, clienterrors.ErrInvalidGrant, "missing code verifier")
 		return
@@ -58,14 +55,12 @@ func (o *OAuth) Token(w http.ResponseWriter, r *http.Request) {
 
 	codeChallenge, err := o.clientDB.CheckAuthorizationCode(clientID, code)
 	if err != nil {
-		// http.Error(w, err.Error(), http.StatusUnauthorized)
 		w.WriteHeader(http.StatusBadRequest)
 		clienterrors.Write(w, clienterrors.ErrInvalidGrant, err.Error())
 		return
 	}
 
 	if oauth2.S256ChallengeFromVerifier(codeVerifier) != codeChallenge {
-		// http.Error(w, "code veifier does not match code challenge", http.StatusUnauthorized)
 		w.WriteHeader(http.StatusBadRequest)
 		clienterrors.Write(
 			w,
