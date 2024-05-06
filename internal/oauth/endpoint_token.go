@@ -13,11 +13,21 @@ import (
 // used by the client to obtain an access token
 // no cookie sessions here
 func (o *OAuth) Token(w http.ResponseWriter, r *http.Request) {
+	grantType := r.FormValue("grant_type")
+	if grantType != "authorization_code" {
+		w.WriteHeader(http.StatusBadRequest)
+		clienterrors.Write(
+			w,
+			clienterrors.ErrUnsupportedGrantType,
+			"server only supports authorization_code",
+		)
+	}
+
 	clientID := r.FormValue("client_id")
 	client, err := o.clientDB.Client(clientID)
 	if err != nil {
 		// http.Error(w, err.Error(), http.StatusUnauthorized)
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusUnauthorized)
 		clienterrors.Write(w, clienterrors.ErrInvalidClient, err.Error())
 		return
 	}
@@ -33,7 +43,7 @@ func (o *OAuth) Token(w http.ResponseWriter, r *http.Request) {
 	code := r.FormValue("code")
 	if code == "" {
 		w.WriteHeader(http.StatusBadRequest)
-		clienterrors.Write(w, clienterrors.ErrInvalidRequest, "missing authcode")
+		clienterrors.Write(w, clienterrors.ErrInvalidGrant, "missing authcode")
 		// http.Error(w, "no authorization code provided", http.StatusNotAcceptable)
 		return
 	}
@@ -42,7 +52,7 @@ func (o *OAuth) Token(w http.ResponseWriter, r *http.Request) {
 	if codeVerifier == "" {
 		// http.Error(w, "no code verifier provided", http.StatusNotAcceptable)
 		w.WriteHeader(http.StatusBadRequest)
-		clienterrors.Write(w, clienterrors.ErrInvalidRequest, "missing code verifier")
+		clienterrors.Write(w, clienterrors.ErrInvalidGrant, "missing code verifier")
 		return
 	}
 
@@ -50,7 +60,7 @@ func (o *OAuth) Token(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// http.Error(w, err.Error(), http.StatusUnauthorized)
 		w.WriteHeader(http.StatusBadRequest)
-		clienterrors.Write(w, clienterrors.ErrInvalidRequest, err.Error())
+		clienterrors.Write(w, clienterrors.ErrInvalidGrant, err.Error())
 		return
 	}
 
@@ -59,7 +69,7 @@ func (o *OAuth) Token(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		clienterrors.Write(
 			w,
-			clienterrors.ErrInvalidRequest,
+			clienterrors.ErrInvalidGrant,
 			"code veifier does not match code challenge",
 		)
 		return
@@ -67,9 +77,7 @@ func (o *OAuth) Token(w http.ResponseWriter, r *http.Request) {
 
 	token, err := o.clientTokenIssuer.IssueTokens(&claims.OAuthClaims{})
 	if err != nil {
-		// http.Error(w, err.Error(), http.StatusInternalServerError)
-		w.WriteHeader(http.StatusBadRequest)
-		clienterrors.Write(w, clienterrors.ErrInvalidRequest, err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
