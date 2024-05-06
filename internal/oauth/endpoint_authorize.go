@@ -76,7 +76,7 @@ func (o *OAuth) Authorize(w http.ResponseWriter, r *http.Request) {
 	if params.CodeChallengeMethod != "S256" {
 		u := redirecterrors.URI(
 			params.RedirectURI,
-			redirecterrors.InvalidRequest,
+			redirecterrors.ErrInvalidRequest,
 			"requires challengetype S256",
 			params.State,
 		)
@@ -87,7 +87,7 @@ func (o *OAuth) Authorize(w http.ResponseWriter, r *http.Request) {
 	if params.CodeChallenge == "" {
 		u := redirecterrors.URI(
 			params.RedirectURI,
-			redirecterrors.InvalidRequest,
+			redirecterrors.ErrInvalidRequest,
 			"empty code challenge",
 			params.State,
 		)
@@ -101,7 +101,7 @@ func (o *OAuth) Authorize(w http.ResponseWriter, r *http.Request) {
 	if err := o.clientDB.SetAuthorizationCode(params.ClientID, authorizationCode, params.CodeChallenge); err != nil {
 		u := redirecterrors.URI(
 			params.RedirectURI,
-			redirecterrors.ServerError,
+			redirecterrors.ErrServerError,
 			err.Error(),
 			params.State,
 		)

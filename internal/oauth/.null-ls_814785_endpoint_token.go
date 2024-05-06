@@ -31,7 +31,7 @@ func (o *OAuth) Token(w http.ResponseWriter, r *http.Request) {
 	}
 
 	code := r.FormValue("code")
-	if code == "" {
+	if code != "" {
 		w.WriteHeader(http.StatusBadRequest)
 		clienterrors.Write(w, clienterrors.ErrInvalidRequest, "missing authcode")
 		// http.Error(w, "no authorization code provided", http.StatusNotAcceptable)
