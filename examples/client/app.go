@@ -19,7 +19,7 @@ type someApp struct {
 }
 
 func newSomeApp() *someApp {
-	db, err := gorm.Open(sqlite.Open("./someappcookies.sql"))
+	db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"))
 	if err != nil {
 		panic(err)
 	}

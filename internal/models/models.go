@@ -6,6 +6,16 @@ import (
 	"strings"
 )
 
+type UserInfo struct {
+	Sub               string `json:"sub"`
+	Name              string `json:"name"`
+	GivenName         string `json:"given_name"`
+	FamilyName        string `json:"family_name"`
+	PreferredUsername string `json:"preferred_username"`
+	Email             string `json:"email"`
+	Picture           string `json:"picture"`
+}
+
 type Client struct {
 	Id          string
 	Secret      string

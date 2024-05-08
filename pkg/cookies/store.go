@@ -20,7 +20,7 @@ type sessionValues struct {
 }
 
 func newStore() *store {
-	db, err := gorm.Open(sqlite.Open("session.db"))
+	db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"))
 	if err != nil {
 		panic(err)
 	}

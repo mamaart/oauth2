@@ -24,4 +24,5 @@ type AuthorizationCode struct {
 	ClientID      uint   `gorm:"uniqueIndex:client_code"`
 	Code          string `gorm:"uniqueIndex:client_code"`
 	CodeChallenge string
+	UserID        string
 }

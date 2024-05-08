@@ -14,11 +14,7 @@ type s struct {
 	clientTokenIssuer *issuer.Issuer[*claims.OAuthClaims]
 }
 
-func New(clientDB ports.ClientDB) *s {
-	iss, err := issuer.NewIssuer[*claims.OAuthClaims](&claims.RefreshValidator{})
-	if err != nil {
-		panic(err)
-	}
+func New(clientDB ports.ClientDB, iss *issuer.Issuer[*claims.OAuthClaims]) *s {
 	return &s{
 		clientDB:          clientDB,
 		clientTokenIssuer: iss,
@@ -28,9 +24,17 @@ func New(clientDB ports.ClientDB) *s {
 func (s *s) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch r.FormValue("grant_type") {
 	case "authorization_code":
+		client_id, client_secret, ok := r.BasicAuth()
+		if !ok {
+			handleErr(w, &AuthGrantError{
+				HttpStatus:  http.StatusUnauthorized,
+				ClientError: clienterrors.ErrInvalidClient,
+				Description: "missing basic auth",
+			})
+		}
 		if tokens, err := s.authGrantFlow(
-			r.FormValue("client_id"),
-			r.FormValue("client_secret"),
+			client_id,
+			client_secret,
 			r.FormValue("code"),
 			r.FormValue("code_verifier"),
 		); err != nil {

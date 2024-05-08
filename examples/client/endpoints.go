@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 
+	"github.com/mamaart/oauth2/internal/models"
 	"golang.org/x/oauth2"
 )
 
@@ -47,17 +49,37 @@ func (s *someApp) oauth(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "code not found", http.StatusBadRequest)
 		return
 	}
-	if _ /*token*/, err := s.config.Exchange(
+	tokens, err := s.config.Exchange(
 		context.Background(),
 		code,
 		oauth2.VerifierOption(verifier),
-	); err != nil {
+	)
+	if err != nil {
 		log.Println(fmt.Errorf("oauth Exchange failed: %w", err))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	session.Values["authorized"] = "userIDMartiniBoy"
+	req, err := http.NewRequest(http.MethodGet, "http://localhost:2000/userinfo", nil)
+	if err != nil {
+		panic(err)
+	}
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tokens.AccessToken))
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		log.Println(resp.Status)
+		log.Println(resp.Header.Values("WWW-Authenticate"))
+	}
+
+	var userInfo models.UserInfo
+	if err := json.NewDecoder(resp.Body).Decode(&userInfo); err != nil {
+		panic(err)
+	}
+
+	session.Values["authorized"] = userInfo.PreferredUsername
 	session.Save(r, w)
 
 	uri, ok := session.Values["redirect_uri"].(string)

@@ -66,39 +66,39 @@ func (o *OAuth) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Any errors after this point should redirect to redirect_uri with error in url params
 
-	authorized, _ := session.IsAuthorized()
+	authorized, userID := session.IsAuthorized()
 	if !authorized {
 		session.StoreParams(params)
 		http.Redirect(w, r, fmt.Sprintf("/auth?client_id=%s", params.ClientID), http.StatusFound)
 		return
 	}
 
-	if params.CodeChallengeMethod != "S256" {
-		u := redirecterrors.URI(
-			params.RedirectURI,
-			redirecterrors.ErrInvalidRequest,
-			"requires challengetype S256",
-			params.State,
-		)
-		http.Redirect(w, r, u, http.StatusFound)
-		return
-	}
+	//if params.CodeChallengeMethod != "S256" {
+	//	u := redirecterrors.URI(
+	//		params.RedirectURI,
+	//		redirecterrors.ErrInvalidRequest,
+	//		"requires challengetype S256",
+	//		params.State,
+	//	)
+	//	http.Redirect(w, r, u, http.StatusFound)
+	//	return
+	//}
 
-	if params.CodeChallenge == "" {
-		u := redirecterrors.URI(
-			params.RedirectURI,
-			redirecterrors.ErrInvalidRequest,
-			"empty code challenge",
-			params.State,
-		)
-		http.Redirect(w, r, u, http.StatusFound)
-		return
-	}
+	//if params.CodeChallenge == "" {
+	//	u := redirecterrors.URI(
+	//		params.RedirectURI,
+	//		redirecterrors.ErrInvalidRequest,
+	//		"empty code challenge",
+	//		params.State,
+	//	)
+	//	http.Redirect(w, r, u, http.StatusFound)
+	//	return
+	//}
 
 	// TODO: code must live max 10 minutes and should remove all
 	// tokens previously based on that code.
 	authorizationCode := oauth2.S256ChallengeFromVerifier(oauth2.GenerateVerifier()) // random
-	if err := o.clientDB.SetAuthorizationCode(params.ClientID, authorizationCode, params.CodeChallenge); err != nil {
+	if err := o.clientDB.SetAuthorizationCode(params.ClientID, authorizationCode, params.CodeChallenge, userID); err != nil {
 		u := redirecterrors.URI(
 			params.RedirectURI,
 			redirecterrors.ErrServerError,

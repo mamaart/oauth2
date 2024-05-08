@@ -10,10 +10,15 @@ type UserAuthorizer interface {
 	Login(username, password string) error
 }
 
+type UserDB interface {
+	UserInfo(username string) (models.UserInfo, error)
+}
+
 type ClientDB interface {
+	AddScope(string) error
 	Client(id string) (*models.Client, error)
-	SetAuthorizationCode(clientID, code, codeChallenge string) error
-	CheckAuthorizationCode(clientID, code string) (string, error)
+	SetAuthorizationCode(clientID, code, codeChallenge, userID string) error
+	CheckAuthorizationCode(clientID, code string) (string, string, error)
 	AddClient(models.Client) error
 }
 
@@ -35,6 +40,7 @@ var (
 	ErrEmptyCodeChallenge = errors.New("empty code challenge")
 	ErrEmptyVerifier      = errors.New("empty verifier")
 	ErrEmptyCode          = errors.New("empty code")
+	ErrEmptyUserID        = errors.New("empty user id")
 	ErrCodeExpired        = errors.New("code expired")
 	ErrUnauthorized       = errors.New("unauthorized")
 )

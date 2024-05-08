@@ -6,7 +6,6 @@ import (
 	"github.com/mamaart/jwtengine"
 	"github.com/mamaart/oauth2/internal/claims"
 	"github.com/mamaart/oauth2/internal/clienterrors"
-	"golang.org/x/oauth2"
 )
 
 type AuthGrantError struct {
@@ -47,15 +46,15 @@ func (s *s) authGrantFlow(
 		}
 	}
 
-	if codeVerifier == "" {
-		return nil, &AuthGrantError{
-			HttpStatus:  http.StatusBadRequest,
-			ClientError: clienterrors.ErrInvalidGrant,
-			Description: "missing code verifier",
-		}
-	}
+	//if codeVerifier == "" {
+	//	return nil, &AuthGrantError{
+	//		HttpStatus:  http.StatusBadRequest,
+	//		ClientError: clienterrors.ErrInvalidGrant,
+	//		Description: "missing code verifier",
+	//	}
+	//}
 
-	codeChallenge, err := s.clientDB.CheckAuthorizationCode(clientID, code)
+	_, userID, err := s.clientDB.CheckAuthorizationCode(clientID, code)
 	if err != nil {
 		return nil, &AuthGrantError{
 			HttpStatus:  http.StatusBadRequest,
@@ -64,13 +63,17 @@ func (s *s) authGrantFlow(
 		}
 	}
 
-	if oauth2.S256ChallengeFromVerifier(codeVerifier) != codeChallenge {
-		return nil, &AuthGrantError{
-			HttpStatus:  http.StatusBadRequest,
-			ClientError: clienterrors.ErrInvalidGrant,
-			Description: "code veifier does not match code challenge",
-		}
-	}
+	//if oauth2.S256ChallengeFromVerifier(codeVerifier) != codeChallenge {
+	//	return nil, &AuthGrantError{
+	//		HttpStatus:  http.StatusBadRequest,
+	//		ClientError: clienterrors.ErrInvalidGrant,
+	//		Description: "code veifier does not match code challenge",
+	//	}
+	//}
 
-	return s.clientTokenIssuer.IssueTokens(&claims.OAuthClaims{})
+	return s.clientTokenIssuer.IssueTokens(&claims.OAuthClaims{
+		User:   userID,
+		Client: clientID,
+		Scope:  client.Scopes,
+	})
 }

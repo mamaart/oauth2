@@ -5,16 +5,16 @@ import (
 )
 
 type OAuthClaims struct {
-	user   string
-	scope  string
-	client string
+	User   string
+	Scope  []string
+	Client string
 }
 
 func (c *OAuthClaims) AccessClaimsAsMap() map[string]interface{} {
 	return map[string]interface{}{
-		"user":   c.user,
-		"scope":  c.scope,
-		"client": c.client,
+		"user":   c.User,
+		"scope":  c.Scope,
+		"client": c.Client,
 	}
 }
 
@@ -22,15 +22,14 @@ func (c *OAuthClaims) RefreshClaimsAsMap() map[string]interface{} {
 	return c.AccessClaimsAsMap()
 }
 
-type RefreshValidator struct {
-}
+type RefreshValidator struct{}
 
 func (v *RefreshValidator) Validate(m map[string]interface{}) (*OAuthClaims, error) {
 	user, ok := m["user"].(string)
 	if !ok {
 		return nil, fmt.Errorf("no user in claims")
 	}
-	scope, ok := m["scope"].(string)
+	scope, ok := m["scope"].([]string)
 	if !ok {
 		return nil, fmt.Errorf("no scope in claims")
 	}
@@ -39,8 +38,8 @@ func (v *RefreshValidator) Validate(m map[string]interface{}) (*OAuthClaims, err
 		return nil, fmt.Errorf("no client in claims")
 	}
 	return &OAuthClaims{
-		user:   user,
-		scope:  scope,
-		client: client,
+		User:   user,
+		Scope:  scope,
+		Client: client,
 	}, nil
 }

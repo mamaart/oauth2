@@ -10,7 +10,7 @@ type clientDB struct {
 }
 
 func New() *clientDB {
-	db, err := gorm.Open(sqlite.Open("./cliendb.sql"))
+	db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"))
 	if err != nil {
 		panic(err)
 	}

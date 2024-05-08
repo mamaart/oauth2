@@ -20,7 +20,7 @@ type Manager struct {
 }
 
 func New(name string) *Manager {
-	db, err := gorm.Open(sqlite.Open("./cookies.sql"))
+	db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"))
 	if err != nil {
 		panic(err)
 	}

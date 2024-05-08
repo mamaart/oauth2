@@ -44,7 +44,7 @@ func (c *clientDB) getClient(id string) (*Client, error) {
 	return &client, nil
 }
 
-func (c *clientDB) SetAuthorizationCode(clientID, code, codeChallenge string) error {
+func (c *clientDB) SetAuthorizationCode(clientID, code, codeChallenge, userID string) error {
 	if code == "" {
 		return ports.ErrEmptyCode
 	}
@@ -53,8 +53,12 @@ func (c *clientDB) SetAuthorizationCode(clientID, code, codeChallenge string) er
 		return ports.ErrEmptyClientID
 	}
 
-	if codeChallenge == "" {
-		return ports.ErrEmptyCodeChallenge
+	//if codeChallenge == "" {
+	//	return ports.ErrEmptyCodeChallenge
+	//}
+
+	if userID == "" {
+		return ports.ErrEmptyUserID
 	}
 
 	client, err := c.getClient(clientID)
@@ -66,6 +70,7 @@ func (c *clientDB) SetAuthorizationCode(clientID, code, codeChallenge string) er
 		ClientID:      client.ID,
 		Code:          code,
 		CodeChallenge: codeChallenge,
+		UserID:        userID,
 	}).Error; err != nil {
 		if errors.Is(err, gorm.ErrDuplicatedKey) {
 			return ports.ErrAlreadyExist
@@ -75,31 +80,40 @@ func (c *clientDB) SetAuthorizationCode(clientID, code, codeChallenge string) er
 	return nil
 }
 
-func (c *clientDB) CheckAuthorizationCode(clientID, code string) (string, error) {
+func (c *clientDB) CheckAuthorizationCode(clientID, code string) (string, string, error) {
 	if code == "" {
-		return "", ports.ErrEmptyCode
+		return "", "", ports.ErrEmptyCode
 	}
 
 	client, err := c.getClient(clientID)
 	if err != nil {
-		return "", ports.ErrEmptyClientID
+		return "", "", ports.ErrEmptyClientID
 	}
 
 	var authCode AuthorizationCode
 	if err := c.db.First(&authCode, "client_id = ? AND code == ?", client.ID, code).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return "", ports.ErrCodeNotFound
+			return "", "", ports.ErrCodeNotFound
 		}
-		return "", errors.Join(err, ports.ErrUnexpected)
+		return "", "", errors.Join(err, ports.ErrUnexpected)
 	}
 
 	// Maximum 10 minutes allowed in OAuth
 	if time.Now().Sub(authCode.CreatedAt).Seconds() > 60 {
 		log.Println("authorization code is expired after one minute")
-		return "", ports.ErrCodeExpired
+		return "", "", ports.ErrCodeExpired
 	}
 
-	return authCode.CodeChallenge, nil
+	return authCode.CodeChallenge, authCode.UserID, nil
+}
+
+func (c *clientDB) AddScope(scope string) error {
+	if err := c.db.Create(&Scope{
+		Name: scope,
+	}).Error; err != nil {
+		return err
+	}
+	return nil
 }
 
 func (c *clientDB) AddClient(client models.Client) error {
