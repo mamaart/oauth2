@@ -1,7 +1,6 @@
 package oauth2
 
 import (
-	"crypto/sha256"
 	"errors"
 	"log"
 	"net/http"
@@ -15,11 +14,7 @@ import (
 	"github.com/mamaart/oauth2/internal/oauth/token"
 	"github.com/mamaart/oauth2/internal/ports"
 	"github.com/mamaart/oauth2/internal/userinfo"
-	"github.com/mamaart/oauth2/pkg/uuid"
 )
-
-// var hashKey = []byte("FF51A553-72FC-478B-9AEF-93D6F506DE91")
-var hashKey = sha256.Sum256([]byte(uuid.New()))
 
 type OAuthServer struct {
 	mux *http.ServeMux

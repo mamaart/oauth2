@@ -3,7 +3,7 @@ package authorizer
 import (
 	"net/http"
 
-	"github.com/mamaart/oauth2/pkg/viewmodel"
+	"github.com/mamaart/viewmodel"
 )
 
 func (a *Authorizer) UI(w http.ResponseWriter, r *http.Request) {

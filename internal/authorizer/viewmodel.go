@@ -1,6 +1,6 @@
 package authorizer
 
-import "github.com/mamaart/oauth2/pkg/viewmodel"
+import "github.com/mamaart/viewmodel"
 
 type ErrorBox struct {
 	Title  string
