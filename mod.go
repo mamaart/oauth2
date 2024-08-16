@@ -2,14 +2,13 @@ package oauth2
 
 import (
 	"errors"
-	"log"
 	"net/http"
 
-	"github.com/mamaart/jwtengine/issuer"
 	"github.com/mamaart/jwtengine/validator"
 	"github.com/mamaart/oauth2/internal/authorizer"
 	"github.com/mamaart/oauth2/internal/claims"
 	"github.com/mamaart/oauth2/internal/cookiemanager"
+	"github.com/mamaart/oauth2/internal/models"
 	"github.com/mamaart/oauth2/internal/oauth"
 	"github.com/mamaart/oauth2/internal/oauth/token"
 	"github.com/mamaart/oauth2/internal/ports"
@@ -22,16 +21,22 @@ type OAuthServer struct {
 	cookieManager *cookiemanager.Manager
 }
 
-type Opts struct {
-	ClientDB       ports.ClientDB
-	UserAuthorizer ports.UserAuthorizer
-	UserDB         ports.UserDB
-	Issuer         *issuer.Issuer[*claims.OAuthClaims]
-	// UserValidatorPublicKey crypto.PublicKey
-}
+type (
+	ClientDB       = ports.ClientDB
+	UserAuthorizer = ports.UserAuthorizer
+	UserDB         = ports.UserDB
+
+	Client      = models.Client
+	UserInfo    = models.UserInfo
+	OAuthParams = models.OAuthParams
+
+	OAuthClaims      = claims.OAuthClaims
+	RefreshValidator = claims.RefreshValidator
+)
 
 var (
 	ErrMissingClientDB       = errors.New("missing client db")
+	ErrMissingViewmodel      = errors.New("missing viewmodel")
 	ErrMissingUserAuthorizer = errors.New("missing user authorizer")
 	ErrMissingUserDB         = errors.New("missing user db")
 	ErrUnauthorized          = ports.ErrUnauthorized
@@ -39,24 +44,9 @@ var (
 )
 
 func New(opts Opts) (*OAuthServer, error) {
-	if opts.ClientDB == nil {
-		return nil, ErrMissingClientDB
-	}
 
-	if opts.UserAuthorizer == nil {
-		return nil, ErrMissingUserAuthorizer
-	}
-
-	if opts.UserDB == nil {
-		return nil, ErrMissingUserDB
-	}
-
-	if opts.Issuer == nil {
-		issuer, err := issuer.NewIssuer[*claims.OAuthClaims](&claims.RefreshValidator{})
-		if err != nil {
-			panic(err)
-		}
-		opts.Issuer = issuer
+	if err := opts.validate(); err != nil {
+		return nil, err
 	}
 
 	validator, err := validator.NewValidator(opts.Issuer.PublicKeyRAW())
@@ -64,13 +54,9 @@ func New(opts Opts) (*OAuthServer, error) {
 		panic(err)
 	}
 
-	var (
-		cm       = cookiemanager.New("cookieman")
-		mux      = http.NewServeMux()
-		userAuth = authorizer.New(cm, opts.UserAuthorizer)
-	)
-
-	mux.Handle("/static/", http.StripPrefix("/static", http.FileServer(http.Dir("./static/"))))
+	cm := cookiemanager.New("cookieman")
+	mux := http.NewServeMux()
+	userAuth := authorizer.New(cm, opts.UserAuthorizer, opts.Viewmodel)
 
 	mux.Handle("GET /authorize", oauth.New(opts.ClientDB, cm))
 	mux.Handle("POST /token", token.New(opts.ClientDB, opts.Issuer))
@@ -89,7 +75,5 @@ func New(opts Opts) (*OAuthServer, error) {
 }
 
 func (s *OAuthServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	log.Println(r.URL.String())
-	log.Println("PEER:", r.RemoteAddr)
 	s.mux.ServeHTTP(w, r)
 }
